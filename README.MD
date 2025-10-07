@@ -1,4 +1,4 @@
-# Arbitary Geometry Offside
+# Arbitrary Geometry Offside
 
 This is a supplement to the repository [Arbitary Geometry](https://github.com/willsuan/arbitrary-geometries). It consists of some demo work and personal explorations of the code in that repository.
 
