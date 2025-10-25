@@ -81,10 +81,10 @@ problem = Poisson(mesh=mesh, vec=1, dim=2, ele_type=ele_type, dirichlet_bc_info=
 
 # Solve the problem.
 # solver_options can be changed for other linear solver options
-sol = solver(problem)
+# sol = solver(problem)
 
 ## scipy.sparse.linalg.spsolve
-# sol = solver(problem, solver_options={'umfpack_solver': {}})
+sol = solver(problem, solver_options={'umfpack_solver': {}})
 
 ## PETSc
 # sol = solver(problem, solver_options={'petsc_solver': {'ksp_type': 'bcgsl', 'pc_type': 'ilu'}})
@@ -107,15 +107,29 @@ def _open_with_viewer(vtk_path: str) -> None:
     """
     try:
         import pyvista as pv
-        try:
-            mesh = pv.read(vtk_path)
-            p = pv.Plotter()
-            p.add_mesh(mesh, show_edges=True)
-            print(f"Opening {vtk_path} with PyVista...")
-            p.show()
+        import numpy as onp  # regular numpy for convenience
+
+        mesh = pv.read(vtk_path)
+
+        # Try to get the field name automatically
+        field_names = list(mesh.point_data.keys())
+        if not field_names:
+            print("No point data found in the VTK file.")
             return
-        except Exception as e:
-            print("PyVista is installed but failed to open the file:", e)
+
+        field_name = field_names[0]
+        u = mesh.point_data[field_name]
+
+        # Promote to 3D: (x, y, u)
+        mesh.points = onp.column_stack([mesh.points[:, 0],
+                                        mesh.points[:, 1],
+                                        u])
+
+        print(f"Opening {vtk_path} as 3D height map using field '{field_name}'...")
+        p = pv.Plotter()
+        p.add_mesh(mesh, show_edges=True, scalars=u, cmap='viridis')
+        p.show()
+        return
     except Exception:
         # PyVista not available — fall through to ParaView
         pass
